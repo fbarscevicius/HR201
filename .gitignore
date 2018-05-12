@@ -2,5 +2,6 @@
 *.Rproj
 *.Rhistory
 
-# ignore learning folder
+# ignore folders
+.Rproj.user/
 00_Learning/
