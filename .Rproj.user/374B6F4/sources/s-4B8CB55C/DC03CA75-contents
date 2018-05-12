@@ -1,0 +1,34 @@
+library(tidyverse)
+library(tidyquant)
+library(readxl)
+library(forcats)
+library(stringr)
+
+# Load Data
+path_train    <- '00_Data/telco_train.xlsx'
+train_raw_tbl <- read_xlsx(path_train)
+
+# Data Subset
+dept_job_role_tbl <- train_raw_tbl %>% 
+  select(EmployeeNumber, Department, JobRole, PerformanceRating, Attrition)
+
+
+# 1.  Business Science Problem Framework ----
+
+# 1A. View Business As Machine ----
+
+# BSU's:              Department and Job Role
+# Define Objectives:  Retaing High Performers
+# Assess Outcomes:    TBD
+
+dept_job_role_tbl %>% 
+  group_by(Attrition) %>% 
+  summarise(n = n()) %>% 
+  ungroup() %>% 
+  mutate(pct = n/sum(n))
+
+# 1B. Understand the Drivers
+
+# Investigate Objectives: 
+# Synthesize Outcomes:    
+# Hypothesize Drivers:    

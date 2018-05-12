@@ -1,0 +1,6 @@
+# ignore rproj related files
+*.Rproj
+*.Rhistory
+
+# ignore learning folder
+00_Learning/
