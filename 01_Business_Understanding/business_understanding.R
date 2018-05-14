@@ -150,3 +150,136 @@ dept_job_role_tbl %>%
   mutate(
     cost = calculate_attrition_cost(n = n)
   )
+
+# Workflow of attrition ----
+
+count_to_pct <- function(data, ..., col = n) {
+  
+  grouping_vars_expr <- quos(...)
+  col_expr <- enquo(col)
+  
+  data %>%
+    group_by(!!! grouping_vars_expr) %>% 
+    mutate(pct = (!! col_expr)/sum(!! col_expr)) %>% 
+    ungroup() -> ret
+  
+  return (ret)
+}
+
+
+asses_attrition <- function(data, attrition_col, attrition_val, baseline_pct) {
+  
+  attrition_col_expr <- enquo(attrition_col)
+  
+  data %>% 
+    filter((!! attrition_col_expr) %in% attrition_val) %>% 
+      arrange(desc(pct)) %>% 
+      mutate(
+        above_industry_avg = case_when(
+          pct > baseline_pct ~ 'Yes', 
+          TRUE ~ 'No'
+          )
+      )
+}
+
+# Visualization of Attrition Cost ----
+
+  
+  # Data Manipulation
+  mutate(name = str_c(Department, JobRole, sep = ': ') %>% as_factor()) %>% 
+  mutate(name = fct_reorder(name, cost)) %>% 
+  mutate(cost_text = str_c('$', format(cost / 1e6, digits = 2), 'M', sep = '')) %>% 
+  
+  # Plotting
+  ggplot(aes(x = cost, y = name)) +
+  geom_segment(aes(xend = 0, yend = name), color = palette_light()[[1]]) +
+  geom_point(aes(size = cost), color = palette_light()[[1]]) +
+  scale_x_continuous(labels = scales::dollar) +
+  geom_label(aes(label = cost_text, size = cost), hjust = 'inward', color = palette_light()[[1]]) +
+  theme_tq() +
+  scale_size(range = c(3, 5)) +
+  labs(title = 'Estimated Cost of Attrition by Department and Job Role', 
+       y = '', x = 'Cost of Attrition') +
+  theme(legend.position = 'none')
+
+plot_attrition <- function(data, ..., .value, 
+                           fct_reorder = TRUE, 
+                           fct_rev = FALSE, 
+                           include_lbl = TRUE, 
+                           color = palette_light()[[1]], 
+                           units = c("0", "K", "M")) {
+  
+  
+  # Inputs
+  
+  group_vars_expr <- quos(...)
+  if (length(group_vars_expr) == 0) 
+    group_vars_expr <- quos(rlang::sym(colnames(data)[[1]]))
+  
+  value_expr <- enquo(.value)
+  value_name <- quo_name(value_expr)
+  
+  units_val <- switch(units[[1]],
+                      "M" = 1e6,
+                      "K" = 1e3,
+                      "0"  = 1)
+  if (units[[1]] == "0") units <- ""
+  
+  
+  # Data Manipulation
+  usd <- scales::dollar_format(prefix = "$", largest_with_cents = 1e3)
+  
+  data_manipulated <- data %>%
+    mutate(name = str_c(!!! group_vars_expr, sep = ": ") %>% as_factor()) %>% 
+    mutate(value_text = str_c(usd(!! value_expr / units_val), 
+                              units[[1]], sep = ""))
+  
+  
+  if (fct_reorder) {
+    data_manipulated <- data_manipulated %>%
+      mutate(name = forcats::fct_reorder(name, !! value_expr)) %>%
+      arrange(name)
+  }
+  
+  if (fct_rev) {
+    data_manipulated <- data_manipulated %>%
+      mutate(name = forcats::fct_rev(name)) %>%
+      arrange(name)
+  }
+  
+  # Visualization
+  
+  g <- data_manipulated %>%
+    ggplot(aes_string(x = value_name, y = "name")) +
+    geom_segment(aes(xend = 0, yend = name), color = color) +
+    geom_point(aes_string(size = value_name), color = color) +
+    scale_x_continuous(labels = scales::dollar) +
+    theme_tq() +
+    scale_size(range = c(3, 5)) +
+    theme(legend.position = "none")
+  
+  
+  if (include_lbl) {
+    g <- g +
+      geom_label(aes_string(label = "value_text", size = value_name), 
+                 hjust = "inward", color = color) 
+  }
+  
+  return(g)
+  
+}
+
+
+dept_job_role_tbl %>% 
+  
+  count(Department, JobRole, Attrition) %>% 
+  
+  count_to_pct(Department, JobRole) %>% 
+  
+  asses_attrition(Attrition, attrition_val = 'Yes', baseline_pct = 0.088) %>% 
+  
+  mutate(
+    cost = calculate_attrition_cost(n = n)
+  ) %>% 
+  
+  plot_attrition(Department, JobRole, .value = cost, units = 'M', include_lbl = TRUE)
