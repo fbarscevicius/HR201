@@ -428,7 +428,7 @@ plot_h2o_performance <- function(h2o_leaderboard, newdata, order_by = c("auc", "
                       color = "model_id", linetype = order_by)) +
     geom_line(size = size) +
     geom_segment(x = 0, y = 0, xend = 1, yend = 1, 
-                 color = "black", size = size) +
+                 color = "grey", size = 1) +
     theme_tq() +
     scale_color_tq() +
     expand_limits(x = c(0, 1), y = c(0, 1)) +
@@ -443,7 +443,7 @@ plot_h2o_performance <- function(h2o_leaderboard, newdata, order_by = c("auc", "
                       color = "model_id", linetype = order_by)) +
     geom_line(size = size) +
     geom_segment(x = 0, y = 1, xend = 1, yend = 1, 
-                 color = "black", size = size) +
+                 color = "grey", size = 1) +
     theme_tq() +
     scale_color_tq() +
     expand_limits(x = c(0, 1), y = c(0, 1)) +
@@ -459,7 +459,7 @@ plot_h2o_performance <- function(h2o_leaderboard, newdata, order_by = c("auc", "
   p <- cowplot::plot_grid(p1, p2, p3, p4, ncol = 2) 
   
   p_title <- ggdraw() + 
-    draw_label("H2O Model Metrics", size = 18, fontface = "bold", 
+    draw_label("Model Metrics", size = 18, fontface = "bold", 
                colour = palette_light()[[1]])
   
   p_subtitle <- ggdraw() + 
